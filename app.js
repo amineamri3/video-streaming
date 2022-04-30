@@ -27,7 +27,7 @@ app.use(Routes);
 
 const PORT =  process.env.PORT || 3000
 mongoose
-	.connect("mongodb+srv://root:JNi60LITCV17nU1f@cluster0.u2ieu.mongodb.net/videostreaming?retryWrites=true&w=majority",)
+	.connect(process.env.DB_URL,)
 	.then(() => {
         console.log("database connected ")
         app.listen(PORT ,()=>{
