@@ -18,6 +18,7 @@ app.use(cors({
 }));
 
 
+app.use('/files',express.static('uploads'))
 
 app.use(Routes);
 
@@ -27,7 +28,7 @@ app.use(Routes);
 
 const PORT =  process.env.PORT || 3000
 mongoose
-	.connect(process.env.DB_URL,)
+	.connect(process.env.DB_URL)
 	.then(() => {
         console.log("database connected ")
         app.listen(PORT ,()=>{
