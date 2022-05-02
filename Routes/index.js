@@ -7,6 +7,10 @@ import { spawn } from 'child_process';
 import ffmpeg from 'fluent-ffmpeg'
 import {Transcoder} from 'simple-hls'
 import fs from 'fs'
+import EventEmitter from "events";
+
+
+const eventEmitter = new EventEmitter();
 const __dirname = path.resolve();
 const allowedExt = ['.mp4']
 const router = express.Router();
@@ -33,6 +37,8 @@ const upload = multer({storage:s})
  router.post('/upload' ,upload.single('video'),  (req,res)=>{
     const  file  = req.file;
     const  title  = req.body.title;
+    console.log(file)
+   
     if(!file || !title){
         return res.send({err:"Both the video file and the video title are mandatory!"})
     }
@@ -113,15 +119,15 @@ const upload = multer({storage:s})
             })
             .run();*/
 
-            transcodeVideo(file.path,path.join(__dirname,destination +"/"));
+            transcodeVideo(file.path,path.join(__dirname,destination +"/"),prevFolder);
             
 
     })
-    res.send("uploaded "+title)
+    res.send({msg:"uploaded "+title,id:prevFolder})
 })
 
 
-async function transcodeVideo (input,outputDir) {
+async function transcodeVideo (input,outputDir,d) {
     const customRenditions = [
         {
        width: 640,
@@ -178,6 +184,8 @@ async function transcodeVideo (input,outputDir) {
     try {
         const hlsPath = await t.transcode();
         console.log('Successfully Transcoded Video');
+        //console.log("event emitted!")
+        eventEmitter.emit("encodingFinished",d );
     } catch(e){
         console.log('Something went wrong');
     }
@@ -187,7 +195,7 @@ async function transcodeVideo (input,outputDir) {
 
 
 router.get('/recentuploads',(req,res)=>{
-    Video.find().sort('date').limit(10).then(r=>{
+    Video.find().sort('-added').limit(10).exec((err,r)=>{
         res.send(r);
     })
 })
@@ -198,4 +206,19 @@ router.get('/', (req,res)=>{
 router.get('/watch', (req,res)=>{
 	res.sendFile(__dirname+'/watch.html')
 });
+router.get('/upload', (req,res)=>{
+	res.sendFile(__dirname+'/upload.html')
+});
+router.get('/listen', (req,res)=>{
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+      })
+      eventEmitter.on('encodingFinished', id => {   
+        //console.log(`event rec: ${id}`);
+        res.write('data: '+id+'\n\n');
+      });
+
+})
 export default router;

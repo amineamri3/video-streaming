@@ -1,0 +1,77 @@
+<head>
+<script>
+var id = -1;
+const evtSource = new EventSource("/listen");
+
+
+evtSource.addEventListener('message', function(e) {
+    window.location.replace("http://localhost:3000/watch?id="+e.data);
+    }, false)
+
+    evtSource.onmessage = function(e) {
+      console.log(e.data);
+    };
+function formsubmit(){
+var name = document.getElementById('title').value; 
+var file = document.getElementById('video').files[0]; 
+console.log(file)
+var xhr  = new XMLHttpRequest();              // create XMLHttpRequest
+var data = new FormData();                // create formData object
+data.append('title',name)
+data.append('video',file)
+
+xhr.upload.addEventListener("progress", progressHandler, false);
+xhr.addEventListener("load", completeHandler, false);
+xhr.addEventListener("error", errorHandler, false);
+xhr.addEventListener("abort", abortHandler, false);
+
+xhr.open("post", "http://localhost:3000/upload");      // open connection
+xhr.send(data);       
+}          
+
+function _(el) {
+  return document.getElementById(el);
+}
+
+function progressHandler(event) {
+  _("loaded_n_total").innerHTML = "Uploaded " + event.loaded + " bytes of " + event.total;
+  var percent = (event.loaded / event.total) * 100;
+  _("progressBar").value = Math.round(percent);
+  _("status").innerHTML = Math.round(percent) + "% uploaded... please wait";
+}
+
+function completeHandler(event) {
+  _("status").innerHTML = "upload completed.";
+  id = event.target.responseText;
+  _("progressBar").value = 0; //wil clear progress bar after successful upload
+}
+
+function errorHandler(event) {
+  _("status").innerHTML = "Upload Failed";
+}
+
+function abortHandler(event) {
+  _("status").innerHTML = "Upload Aborted";
+}
+
+
+</script>
+</head>
+<body>
+    <h4>Select a video to upload : </h4>
+    <br>
+    <form id="form1" enctype="form-data">
+        <input id="title" type="text" />
+        <input id="video" type="file" />
+        <button type="button" onclick="formsubmit()" >Upload</button>
+      </form>
+
+
+      <progress id="progressBar" value="0" max="100" style="width:300px;"></progress>
+      <h3 id="status"></h3>
+      <p id="loaded_n_total"></p>
+      <p >You will be automatically redirected when the video is ready.</p>
+
+      <ul id="list"></ul>
+      
+</body>
